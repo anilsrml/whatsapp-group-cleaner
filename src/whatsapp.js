@@ -1,49 +1,48 @@
-import { bekleKadar } from './cekirdek.js';
+import { waitUntil } from './core.js';
 
-// WhatsApp Web sayfasıyla konuşan katman (sistem sınırı).
-// Kütüphanenin getChats() ve getChatById() fonksiyonları bütün sohbetleri modele
-// çevirirken WhatsApp Web'in yeni sürümünde "r" hatasıyla çöküyor. Bu yüzden
-// gruplar her biri ayrı ayrı ve hataya dayanıklı şekilde doğrudan sayfadan okunur.
+// The layer that talks to the WhatsApp Web page (system boundary).
+// The library's getChats() and getChatById() convert every chat to a model and crash
+// with an "r" error on the current WhatsApp Web version. So groups are read straight
+// from the page, one at a time, and one bad group does not stop the others.
 
-export async function gruplariOku(istemci) {
-    return istemci.pupPage.evaluate(async () => {
-        const koleksiyonlar = window.require('WAWebCollections');
-        const metaKoleksiyon = koleksiyonlar.GroupMetadata || koleksiyonlar.WAWebGroupMetadataCollection;
-        const dene = (f) => {
+export async function readGroups(client) {
+    return client.pupPage.evaluate(async () => {
+        const collections = window.require('WAWebCollections');
+        const metadata = collections.GroupMetadata || collections.WAWebGroupMetadataCollection;
+        const attempt = (fn) => {
             try {
-                return f();
+                return fn();
             } catch {
                 return null;
             }
         };
-        const gruplar = [];
-        for (const c of koleksiyonlar.Chat.getModelsArray()) {
-            const gm = c.groupMetadata;
+        const groups = [];
+        for (const chat of collections.Chat.getModelsArray()) {
+            const gm = chat.groupMetadata;
             if (!gm) continue;
             try {
-                await metaKoleksiyon.update(c.id);
+                await metadata.update(chat.id);
             } catch {
-                // Güncel bilgi alınamazsa önbellekteki bilgiyle devam edilir.
+                // If fresh data is not available, the cached data is used.
             }
-            const p = gm.participants;
-            gruplar.push({
-                id: c.id._serialized,
-                ad: c.formattedTitle || c.name || gm.subject || '',
-                t: typeof c.t === 'number' ? c.t : 0,
-                arsiv: Boolean(c.archive),
-                uye: dene(() => p.iAmMember()),
-                yonetici: Boolean(dene(() => p.iAmAdmin() || p.iAmSuperAdmin())),
-                topluluk: Boolean(gm.parentGroup || gm.isParentGroup),
+            const participants = gm.participants;
+            groups.push({
+                id: chat.id._serialized,
+                name: chat.formattedTitle || chat.name || gm.subject || '',
+                t: typeof chat.t === 'number' ? chat.t : 0,
+                archived: Boolean(chat.archive),
+                member: attempt(() => participants.iAmMember()),
+                admin: Boolean(attempt(() => participants.iAmAdmin() || participants.iAmSuperAdmin())),
+                community: Boolean(gm.parentGroup || gm.isParentGroup),
             });
         }
-        return gruplar;
+        return groups;
     });
 }
 
-function uyeMiyim(istemci, id) {
-    return istemci.pupPage.evaluate((chatId) => {
-        const { Chat } = window.require('WAWebCollections');
-        const chat = Chat.get(chatId);
+function isMember(client, id) {
+    return client.pupPage.evaluate((chatId) => {
+        const chat = window.require('WAWebCollections').Chat.get(chatId);
         try {
             return chat?.groupMetadata?.participants?.iAmMember() ?? false;
         } catch {
@@ -52,59 +51,58 @@ function uyeMiyim(istemci, id) {
     }, id);
 }
 
-// Çıkıştan hemen sonra silinirse, ardından gelen "gruptan çıktın" mesajı grubu
-// listeye geri ekler. Bu yüzden çıkış doğrulanmadan silinmez.
-// Silinen grup WhatsApp Web'in hafızasında bir süre kalır, o yüzden silme sonrası kontrol yapılmaz.
-export function sohbetAl(istemci, id, bekle) {
+// If the chat is deleted right after leaving, the "You left" message that follows puts the
+// group back in the list. So the chat is deleted only after the leave is confirmed.
+// A deleted group stays in WhatsApp Web's memory for a while, so there is no check after delete.
+export function chatActions(client, id, wait) {
     return {
         leave: async () => {
-            await istemci.pupPage.evaluate(async (chatId) => {
+            await client.pupPage.evaluate(async (chatId) => {
                 const chat = await window.WWebJS.getChat(chatId, { getAsModel: false });
                 if (!chat) throw new Error('chat not found');
                 await window.require('WAWebExitGroupAction').sendExitGroup(chat);
             }, id);
-            const cikildi = await bekleKadar({ kosul: async () => !(await uyeMiyim(istemci, id)), bekle });
-            if (!cikildi) throw new Error('could not confirm leaving the group');
-            // "Gruptan çıktın" mesajının gelmesi için kısa bir süre daha beklenir.
-            await bekle(2000);
+            const left = await waitUntil({ condition: async () => !(await isMember(client, id)), wait });
+            if (!left) throw new Error('could not confirm leaving the group');
+            // Give the "You left" message a moment to arrive.
+            await wait(2000);
         },
-        delete: () =>
-            istemci.pupPage.evaluate((chatId) => window.WWebJS.sendDeleteChat(chatId), id),
+        delete: () => client.pupPage.evaluate((chatId) => window.WWebJS.sendDeleteChat(chatId), id),
     };
 }
 
-// Grup fotoğrafını base64 olarak döner; yoksa undefined.
-// Önce WhatsApp Web'in önbelleğindeki küçük fotoğrafa bakılır. Görünmez tarayıcı sohbetleri
-// hiç açmadığı için bu önbellek çoğu zaman boştur; o zaman fotoğraf adresi sunucudan istenir.
-// Kütüphanenin getProfilePicUrl() fonksiyonu bozuk getChatModel yolundan geçtiği için kullanılmaz.
-export async function fotoOku(istemci, id) {
-    const sonuc = await istemci.pupPage.evaluate(async (chatId) => {
+// Returns the group photo as base64, or undefined if there is none.
+// First it checks WhatsApp Web's cache of small photos. The hidden browser never opens a
+// chat, so this cache is often empty; then the photo address is requested from the server.
+// The library's getProfilePicUrl() is not used because it goes through the broken getChatModel path.
+export async function readPhoto(client, id) {
+    const found = await client.pupPage.evaluate(async (chatId) => {
         const wid = window.require('WAWebWidFactory').createWid(chatId);
         try {
-            const kucuk = await window.WWebJS.getProfilePicThumbToBase64(wid);
-            if (kucuk) return { base64: kucuk };
+            const thumb = await window.WWebJS.getProfilePicThumbToBase64(wid);
+            if (thumb) return { base64: thumb };
         } catch {
-            // Önbellekte yoksa sunucuya sorulur.
+            // Not in the cache; ask the server.
         }
-        const kopru = window.require('WAWebContactProfilePicThumbBridge');
+        const bridge = window.require('WAWebContactProfilePicThumbBridge');
         const chat = await window.WWebJS.getChat(chatId, { getAsModel: false }).catch(() => null);
-        for (const arguman of [chat, wid]) {
-            if (!arguman) continue;
+        for (const arg of [chat, wid]) {
+            if (!arg) continue;
             try {
-                const foto = await kopru.requestProfilePicFromServer(arguman);
-                if (foto?.eurl) return { adres: foto.eurl };
-                if (foto) return {};
-            } catch (hata) {
-                // ServerStatusCodeError: grubun fotoğrafı yok.
-                if (hata?.name === 'ServerStatusCodeError') return {};
+                const photo = await bridge.requestProfilePicFromServer(arg);
+                if (photo?.eurl) return { url: photo.eurl };
+                if (photo) return {};
+            } catch (error) {
+                // ServerStatusCodeError: the group has no photo.
+                if (error?.name === 'ServerStatusCodeError') return {};
             }
         }
         return {};
     }, id);
-    if (sonuc.base64) return sonuc.base64;
-    if (!sonuc.adres) return undefined;
-    // CDN adresi tarayıcı yerine buradan indirilir; böylece tarayıcının CORS kısıtına takılmaz.
-    const yanit = await fetch(sonuc.adres);
-    if (!yanit.ok) return undefined;
-    return Buffer.from(await yanit.arrayBuffer()).toString('base64');
+    if (found.base64) return found.base64;
+    if (!found.url) return undefined;
+    // The CDN address is downloaded here instead of in the browser, so CORS does not block it.
+    const res = await fetch(found.url);
+    if (!res.ok) return undefined;
+    return Buffer.from(await res.arrayBuffer()).toString('base64');
 }

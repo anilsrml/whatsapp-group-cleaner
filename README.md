@@ -1,5 +1,7 @@
 # WhatsApp Group Cleaner
 
+**English** | [Türkçe](README.tr.md)
+
 Leave and delete many WhatsApp groups at once. Pick groups in a simple web page on your computer, confirm, and the app works through them for you.
 
 ![Group list with labels and selection](docs/screenshots/2-groups.png)
@@ -132,12 +134,12 @@ To make sure, open **Linked devices** on your phone. The app's device ("Google C
 
 | File | Purpose |
 |---|---|
-| `src/arayuz.js` | Starts the web UI: WhatsApp session, local server, opens the browser. |
-| `src/sunucu.js` | Local HTTP server and API. |
-| `src/oturum.js` | WhatsApp session for the web UI. |
+| `src/ui.js` | Starts the web UI: WhatsApp session, local server, opens the browser. |
+| `src/server.js` | Local HTTP server and API. |
+| `src/session.js` | WhatsApp session for the web UI. |
 | `src/whatsapp.js` | Reads groups, leaves, deletes, and loads photos in WhatsApp Web. |
-| `src/cekirdek.js` | Core logic with no WhatsApp dependency: labels, plan, timing, summary. |
-| `src/index.js`, `src/akis.js` | Terminal version. |
+| `src/core.js` | Core logic with no WhatsApp dependency: labels, plan, timing, summary. |
+| `src/cli.js`, `src/cliFlow.js` | Terminal version. |
 | `public/` | The web page (HTML, CSS, JavaScript). |
 | `test/`, `e2e/` | Unit tests and browser tests. |
 

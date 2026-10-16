@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Group Cleaner</title>
-    <link rel="icon" href="simge.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="stil.css">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="ust-bant" aria-hidden="true"></div>
+    <div class="top-band" aria-hidden="true"></div>
 
-    <main class="kart">
-        <header class="baslik">
-            <div class="marka">
-                <img src="simge.svg" alt="" width="32" height="32">
+    <main class="card">
+        <header class="header">
+            <div class="brand">
+                <img src="icon.svg" alt="" width="32" height="32">
                 <span>Group Cleaner</span>
             </div>
-            <button type="button" id="cikis" class="metin-dugme" hidden>Log out</button>
+            <button type="button" id="logout" class="text-button" hidden>Log out</button>
         </header>
 
         <!-- 1. Connect -->
-        <section id="ekran-baglan" class="ekran baglan" hidden>
-            <div class="baglan-metin">
+        <section id="screen-connect" class="screen connect" hidden>
+            <div class="connect-text">
                 <h1>Clean up your WhatsApp groups in bulk</h1>
                 <ol>
                     <li>Open <b>WhatsApp</b> on your phone</li>
@@ -29,108 +29,108 @@
                     <li>Tap <b>Link a device</b></li>
                     <li>Point your phone at this code</li>
                 </ol>
-                <p class="ipucu">Nothing is saved. When you are done, the linked device is removed automatically.</p>
+                <p class="hint">Nothing is saved. When you are done, the linked device is removed automatically.</p>
             </div>
-            <div class="qr-kutu">
+            <div class="qr-box">
                 <img id="qr" alt="QR code" width="264" height="264" hidden>
-                <div id="qr-bekle" class="donen" role="status" aria-label="Preparing QR code"></div>
+                <div id="qr-wait" class="spinner" role="status" aria-label="Preparing QR code"></div>
             </div>
         </section>
 
         <!-- 2. Loading -->
-        <section id="ekran-yukleniyor" class="ekran ortala" hidden>
-            <div class="donen" aria-hidden="true"></div>
-            <p class="buyuk">Loading chats</p>
-            <p class="ipucu">This can take 1-2 minutes, depending on how many groups you have.</p>
+        <section id="screen-loading" class="screen centered" hidden>
+            <div class="spinner" aria-hidden="true"></div>
+            <p class="large">Loading chats</p>
+            <p class="hint">This can take 1-2 minutes, depending on how many groups you have.</p>
         </section>
 
         <!-- 3. Group list -->
-        <section id="ekran-liste" class="ekran liste" hidden>
-            <div class="liste-ust">
+        <section id="screen-list" class="screen list" hidden>
+            <div class="list-header">
                 <h2>Groups</h2>
-                <span id="grup-sayisi" class="ipucu"></span>
+                <span id="group-count" class="hint"></span>
             </div>
-            <div class="arac-cubugu">
-                <label class="arama">
+            <div class="toolbar">
+                <label class="search">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
-                    <input id="ara" type="search" placeholder="Search groups" aria-label="Search groups" autocomplete="off">
+                    <input id="search" type="search" placeholder="Search groups" aria-label="Search groups" autocomplete="off">
                 </label>
-                <div class="filtreler" role="group" aria-label="Filter by label">
-                    <button type="button" class="cip" data-filtre="" aria-pressed="true">All</button>
-                    <button type="button" class="cip" data-filtre="ADMIN" aria-pressed="false">Admin</button>
-                    <button type="button" class="cip" data-filtre="COMMUNITY" aria-pressed="false">Community</button>
-                    <button type="button" class="cip" data-filtre="ARCHIVED" aria-pressed="false">Archived</button>
-                    <button type="button" class="cip" data-filtre="LEFT" aria-pressed="false">Left</button>
+                <div class="filters" role="group" aria-label="Filter by label">
+                    <button type="button" class="chip" data-filter="" aria-pressed="true">All</button>
+                    <button type="button" class="chip" data-filter="ADMIN" aria-pressed="false">Admin</button>
+                    <button type="button" class="chip" data-filter="COMMUNITY" aria-pressed="false">Community</button>
+                    <button type="button" class="chip" data-filter="ARCHIVED" aria-pressed="false">Archived</button>
+                    <button type="button" class="chip" data-filter="LEFT" aria-pressed="false">Left</button>
                 </div>
-                <button type="button" id="hepsini-sec" class="metin-dugme">Select all shown</button>
+                <button type="button" id="select-all" class="text-button">Select all shown</button>
             </div>
-            <ul id="gruplar" class="gruplar" aria-label="Groups"></ul>
-            <p id="bos" class="bos" hidden>No groups match your search.</p>
+            <ul id="groups" class="groups" aria-label="Groups"></ul>
+            <p id="empty" class="empty" hidden>No groups match your search.</p>
 
-            <div id="secim-cubugu" class="secim-cubugu" hidden>
-                <span id="secim-sayisi"></span>
-                <button type="button" id="secimi-temizle" class="metin-dugme">Clear selection</button>
-                <button type="button" id="devam" class="ana-dugme">Continue</button>
+            <div id="selection-bar" class="selection-bar" hidden>
+                <span id="selection-count"></span>
+                <button type="button" id="clear-selection" class="text-button">Clear selection</button>
+                <button type="button" id="continue" class="primary-button">Continue</button>
             </div>
         </section>
 
         <!-- 4. Progress -->
-        <section id="ekran-ilerleme" class="ekran ilerleme" hidden>
-            <h2 id="ilerleme-baslik">Processing groups</h2>
-            <p class="ipucu" id="ilerleme-not">Keep this tab open. The app waits a few seconds between groups to protect your account.</p>
-            <div class="cubuk" role="progressbar" aria-label="Progress" aria-valuemin="0" id="cubuk">
-                <div class="cubuk-dolu" id="cubuk-dolu"></div>
+        <section id="screen-progress" class="screen progress" hidden>
+            <h2 id="progress-title">Processing groups</h2>
+            <p class="hint" id="progress-note">Keep this tab open. The app waits a few seconds between groups to protect your account.</p>
+            <div class="bar" role="progressbar" aria-label="Progress" aria-valuemin="0" id="bar">
+                <div class="bar-fill" id="bar-fill"></div>
             </div>
-            <p id="ilerleme-sayi" class="ipucu"></p>
-            <ul id="sonuclar" class="sonuclar"></ul>
-            <div id="ozet-kutu" class="ozet-kutu" hidden>
-                <p id="ozet" class="buyuk"></p>
-                <p class="ipucu">It can take a few seconds for changes to show on your phone.</p>
-                <div class="dugmeler">
-                    <button type="button" id="listeye-don" class="ikincil-dugme">Back to list</button>
+            <p id="progress-count" class="hint"></p>
+            <ul id="results" class="results"></ul>
+            <div id="summary-box" class="summary-box" hidden>
+                <p id="summary" class="large"></p>
+                <p class="hint">It can take a few seconds for changes to show on your phone.</p>
+                <div class="buttons">
+                    <button type="button" id="back-to-list" class="secondary-button">Back to list</button>
                 </div>
             </div>
         </section>
 
         <!-- Logged out / error -->
-        <section id="ekran-son" class="ekran ortala" hidden>
-            <p id="son-baslik" class="buyuk"></p>
-            <p id="son-metin" class="ipucu"></p>
+        <section id="screen-end" class="screen centered" hidden>
+            <p id="end-title" class="large"></p>
+            <p id="end-text" class="hint"></p>
         </section>
     </main>
 
-    <p class="alt-not">Not affiliated with WhatsApp. Your data never leaves your computer.</p>
+    <p class="footer-note">Not affiliated with WhatsApp. Your data never leaves your computer.</p>
 
-    <dialog id="onay" aria-labelledby="onay-baslik">
-        <form method="dialog" class="onay">
-            <h2 id="onay-baslik">What should happen to the selected groups?</h2>
-            <fieldset class="modlar">
-                <legend class="gizli">Action</legend>
-                <label class="mod">
-                    <input type="radio" name="mod" value="cik-sil" checked>
+    <dialog id="confirm" aria-labelledby="confirm-title">
+        <form method="dialog" class="confirm">
+            <h2 id="confirm-title">What should happen to the selected groups?</h2>
+            <fieldset class="modes">
+                <legend class="visually-hidden">Action</legend>
+                <label class="mode">
+                    <input type="radio" name="mode" value="leave-delete" checked>
                     <span><b>Leave and delete</b><small>The group is removed from your chat list.</small></span>
                 </label>
-                <label class="mod">
-                    <input type="radio" name="mod" value="cik">
+                <label class="mode">
+                    <input type="radio" name="mode" value="leave">
                     <span><b>Leave only</b><small>The chat history stays in your list.</small></span>
                 </label>
             </fieldset>
 
-            <div id="topluluk-uyari" class="uyari" hidden>
-                <p id="topluluk-metin"></p>
-                <label><input type="checkbox" id="topluluk-dahil"> Also process community groups</label>
+            <div id="community-warning" class="warning" hidden>
+                <p id="community-text"></p>
+                <label><input type="checkbox" id="include-communities"> Also process community groups</label>
             </div>
 
-            <p class="plan-ust"><span id="plan-sayi"></span> · <span id="plan-sure"></span></p>
+            <p class="plan-meta"><span id="plan-count"></span> · <span id="plan-duration"></span></p>
             <ul id="plan" class="plan"></ul>
 
-            <div class="dugmeler">
-                <button type="submit" value="vazgec" class="ikincil-dugme">Cancel</button>
-                <button type="button" id="onayla" class="ana-dugme"></button>
+            <div class="buttons">
+                <button type="submit" value="vazgec" class="secondary-button">Cancel</button>
+                <button type="button" id="confirm-button" class="primary-button"></button>
             </div>
         </form>
     </dialog>
 
-    <script src="uygulama.js" type="module"></script>
+    <script src="app.js" type="module"></script>
 </body>
 </html>
